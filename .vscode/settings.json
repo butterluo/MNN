@@ -1,0 +1,31 @@
+{
+  "cmake.buildBeforeRun": false,
+  "cmake.configureArgs": [
+    "-DMNN_BUILD_DEMO=ON",
+    "-DMNN_BUILD_QUANTOOLS=ON",
+    "-DMNN_BUILD_CONVERTER=ON",
+    "-DMNN_BUILD_TEST=ON",
+    "-DMNN_AVX512=OFF",
+    "-DMNN_USE_SSE=ON",
+    "-DMNN_CUDA=OFF",
+    "-DMNN_DEBUG_MEMORY=OFF",
+    "-DMNN_DEBUG_TENSOR_SIZE=OFF",
+    "-DCMAKE_VERBOSE_MAKEFILE=ON",
+    "-DVERBOSE=ON",
+    // "-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE",
+    // "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc", 
+    // "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++",
+    // "-DCMAKE_BUILD_TYPE:STRING=Debug",
+    "-DMNN_DEBUG=ON"
+  ],
+  "cmake.buildArgs": [
+    "--verbose"
+  ],
+  "cmake.parallelJobs": 6,
+  "cmake.debugConfig": {
+    "args": [
+      //multiPose.out
+      "~/P/PTM/CV/tf/model-mobilenet_v1_075.pb.mnn","/home/butter/CODES/MLSys/HPC/MNN/docs/_static/images/start/multipose_input.png","~/P/PTM/CV/tf/multipose_output.png"
+    ]
+  }
+}
