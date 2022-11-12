@@ -228,8 +228,8 @@ static vector<Schedule::PipelineInfo> _scheduleUnit(const Net* net, const Schedu
                                                     const vector<shared_ptr<Tensor>>& allTensors) {
     vector<Schedule::PipelineInfo> oplists;
     vector<const Op*> ops;
-    generateScheduleGraph(ops, net, configs, allTensors);
-    initPipelineInfosFromOps(oplists, ops, allTensors);
+    generateScheduleGraph(ops, net, configs, allTensors);// 找出所有需要参与计算的结点
+    initPipelineInfosFromOps(oplists, ops, allTensors);// 对这些参与计算的结点,对应创建一个pipeline info
     return oplists;
 }
 
@@ -250,14 +250,14 @@ bool Schedule::schedule(ScheduleInfo& scheduleInfo, const Net* net, const std::v
             return false;
         }
     }
-    bool valid = _setUpTensorInfo(scheduleInfo.allTensors, net);
+    bool valid = _setUpTensorInfo(scheduleInfo.allTensors, net);// 初始化tensor信息
     scheduleInfo.validForResize = valid;
     std::vector<std::shared_ptr<Tensor>>& allTensors = scheduleInfo.allTensors;
     std::vector<std::pair<Backend::Info, std::vector<Schedule::PipelineInfo>>> result;
 
-    for (auto& config : configs) {
+    for (auto& config : configs) {// pipeline以及对应后端backend的构造
         Backend::Info compute;
-        compute.type      = getApprociateType(config);
+        compute.type      = getApprociateType(config);// 决定backend的类型
         compute.numThread = config.numThread;
         if(config.type == MNN_FORWARD_AUTO) {
             if(compute.type == MNN_FORWARD_OPENCL || compute.type == MNN_FORWARD_METAL) {
@@ -266,14 +266,14 @@ bool Schedule::schedule(ScheduleInfo& scheduleInfo, const Net* net, const std::v
             }
         }
         compute.user      = config.backendConfig;
-        auto oplists      = _scheduleUnit(net, config, allTensors);
+        auto oplists      = _scheduleUnit(net, config, allTensors); // 决定pipeline info列表
         result.emplace_back(std::make_pair(compute, std::move(oplists)));
     }
 
     scheduleInfo.pipelineInfo = std::move(result);
 
     // get all used op's output, drop unused op, won't change op order. always insert all Input Ops
-    std::vector<const Op*> oplists;
+    std::vector<const Op*> oplists;// 丢弃不需要计算的op
     {
         for (std::pair<Backend::Info, vector<Schedule::PipelineInfo>>& pipeline : scheduleInfo.pipelineInfo) {
             for (auto& info : pipeline.second) {
@@ -298,15 +298,15 @@ bool Schedule::schedule(ScheduleInfo& scheduleInfo, const Net* net, const std::v
                 auto t = allTensors[iter->second].get();
                 if (TensorUtils::getDescribe(t)->usage == Tensor::InsideDescribe::NORMAL) {
                     TensorUtils::getDescribe(t)->usage = Tensor::InsideDescribe::OUTPUT;
-                }
-                scheduleInfo.outputTensor.insert(
+                }// 默认情况下saveTensors是空的, 如果客户需要取中间tensor的计算结果, 那么传入saveTensors
+                scheduleInfo.outputTensor.insert(  // 即 saveTensors 也要当做output tensor
                            std::make_pair(net->tensorName()->GetAsString(iter->second)->c_str(), t));
             } else {
                 MNN_PRINT("Bad outputname: %s\n", name.c_str());
             }
         }
     }
-    if (net->outputName()) {
+    if (net->outputName()) {// 把模型本身的output tensor 取出来
         userSetOutput = userSetOutput || net->outputName()->size() >= 1;
         for (int i = 0; i < net->outputName()->size(); ++i) {
             std::string name = net->outputName()->Get(i)->str();
@@ -328,11 +328,11 @@ bool Schedule::schedule(ScheduleInfo& scheduleInfo, const Net* net, const std::v
     for (int index = 0; index < allTensors.size(); index++) {
         auto t = allTensors[index].get();
         auto usage = TensorUtils::getDescribe(t)->usage;
-        if (usage == Tensor::InsideDescribe::INPUT) {
+        if (usage == Tensor::InsideDescribe::INPUT) {// 最终的input tensors
             scheduleInfo.inputTensors.insert(std::make_pair(net->tensorName()->GetAsString(index)->c_str(), t));
         }
         if (usage == Tensor::InsideDescribe::OUTPUT && (!userSetOutput)) {
-            scheduleInfo.outputTensor.insert(
+            scheduleInfo.outputTensor.insert(// 最终的output tensors
                        std::make_pair(net->tensorName()->GetAsString(index)->c_str(), t));
         }
     }

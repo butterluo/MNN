@@ -557,7 +557,7 @@ extern void registerArm82RuntimeCreator();
 #endif
 void registerCPURuntimeCreator() {
     CPUBackend::initCreatorMap();
-    registerCPUOps();
+    registerCPUOps();//BTBT 这是生成的，会调各个CPU OP的cpp文件中通过REGISTER_CPU_OP_CREATOR生成的op注册方法，该方法会用到’CPUBackend::addCreator(‘把要注册的op放到CUPBackend.gCreator中
 #ifdef MNN_SUPPORT_BF16
     registerBF16Backend();
 #endif
@@ -565,7 +565,7 @@ void registerCPURuntimeCreator() {
     registerArm82RuntimeCreator();
 #endif
     // TODO: Merge _initCoreFunction MNNFunctionInit and cpuinfo_arm_init
-    MNNCoreFunctionInit();
-    MNNInsertExtraRuntimeCreator(MNN_FORWARD_CPU, new CPURuntimeCreator);
+    MNNCoreFunctionInit();//BTBT 初始化各种硬件相关的kernel函数，以便各个op executor可通过 CPUBackend 的 mCoreFunctions 和 mInt8CoreFunctions 成员得到这些函数去做基本运算
+    MNNInsertExtraRuntimeCreator(MNN_FORWARD_CPU, new CPURuntimeCreator);//BTBT 把MNN_FORWARD_CPU对应的CPURuntimeCreator注册到source/core/Backend.cpp的gExtraCreator中
 };
 } // namespace MNN

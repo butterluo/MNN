@@ -621,8 +621,8 @@ public:
         min = _Minimum(_Scalar<float>(0.0f), min);
         max = _Maximum(_Scalar<float>(0.0f), max);
 
-        auto scale = (max - min) / (_Scalar(2.0f) * clampVar);
-        auto zeroPoint = _Round((_Scalar(0.0f) - min) / scale - clampVar);
+        auto scale = (max - min) / (_Scalar(2.0f) * clampVar);//BTBT 这里乘2是因为clampVar只是正数的最大值，其实还有负数的最小值。scale=原float值范围/int8范围
+        auto zeroPoint = _Round((_Scalar(0.0f) - min) / scale - clampVar);//BTBT 当min是个正数时，zeroPoint貌似超int8最小值，也是对的，因此时原范围是从0右边的min开始有数据的
 
         return std::make_pair(scale, zeroPoint);
     }
@@ -842,9 +842,9 @@ public:
 
             res = outputPair[0];
         } else {
-            if (nullptr == mInputMin) {
+            if (nullptr == mInputMin) {//BTBT 如果没经过if (getIsTraining())分支去求in/out min/max, zero point等量化参数的话，则基于该次forward再求一次这些参数
                 // Initial for test
-                // simulate weight quant
+                // simulate weight quant // weightScale = weight_max / (int8_max - 1) 
                 auto weightScale = _Maximum(_ReduceMax(_Abs(mWeight), {1, 2, 3}, true), _Scalar<float>(1E-6)) * _Reciprocal(mWeightClampValue);
                 auto weightTemp = clamp(_Round(mWeight * _Reciprocal(weightScale)), mWeightClampValue) * weightScale;
 
@@ -881,7 +881,7 @@ public:
             VARP fusedWeights = mWeight;
             VARP fusedBias = mBias;
             fusedBias = _Reshape(fusedBias, {fusedBias->getInfo()->size, 1, 1, 1});
-            if (mBatchNorm) {
+            if (mBatchNorm) {//BTBT conv和bn融合，可以直接改变两者公式，融成一个公式
                 auto bn = std::static_pointer_cast<BatchNormModule>(mBatchNorm);
                 auto bnMean = bn->runningMean();
                 auto bnVar = bn->runningVariance();
@@ -903,7 +903,7 @@ public:
 
             auto x = _Convert(inputs[0], NC4HW4);
 
-            int8_t inputZeroPoint, outputZeroPoint;
+            int8_t inputZeroPoint, outputZeroPoint;//BTBT 求in/out的 zero point
             {
                 VARP channelScale, zeroPoint;
                 auto scaleAndZeroPoint = computeScaleAndZeroPoint(mInputMin, mInputMax, mInputClampValue);
@@ -915,7 +915,7 @@ public:
                 zeroPoint = _Cast<int8_t>(mInputZeroPoint);
 
                 inputZeroPoint = zeroPoint->readMap<int8_t>()[0];
-
+                //类似tf的静态图，这里加上了FoltToInt8的Expr节点
                 x = _FloatToInt8(x, channelScale, -int8_t(mInputClampValue->readMap<float>()[0]), int8_t(mInputClampValue->readMap<float>()[0]), inputZeroPoint);
             }
             {
@@ -934,7 +934,7 @@ public:
             std::vector<int8_t> weight;
             std::vector<float> bias;
             std::vector<float> weightScaleVector;
-            {
+            {//BTBT 加上求量化权重等的Expr节点
                 VARP weightScale, quanWeight, convScale;
                 // auto newWeight = fusedWeights * mInputScale;
                 weightScale = _Maximum(_ReduceMax(_Abs(fusedWeights), {1, 2, 3}, true), _Scalar<float>(1E-6)) * mLimitScale;
@@ -967,7 +967,7 @@ public:
                     ::memcpy(weightScaleVector.data(), ptrScale, weightScaleVector.size() * sizeof(float));
                 }
             }
-            bool relu = mActivation == NN::None ? false : true;
+            bool relu = mActivation == NN::None ? false : true;//BTBT 下面是构建ConvInt8或DepthwiseConvInt8的Op与Expr,将它们加入静态图
             res = _Conv(std::move(weight), std::move(bias), std::move(weightScaleVector), _Convert(x, NC4HW4), mOption.channel,
                         mOption.kernelSize, mOption.padMode, mOption.stride, mOption.dilate, mGroup, mOption.pads, relu, 
                         mInputScale->readMap<float>()[0], mOutputScale->readMap<float>()[0],
@@ -1077,7 +1077,7 @@ private:
     int mBits;
     float mLimit;
     VARP mLimitScale;
-    Express::VARP mWeightClampValue;
+    Express::VARP mWeightClampValue;/*Int8最大值减1*/
     VARP mInputScale = nullptr;
     VARP mOutputScale = nullptr;
     VARP mInputMin = nullptr;
@@ -1090,8 +1090,8 @@ private:
     int mInputMaxPos = -1;
     int mOutputMinPos = -1;
     int mOutputMaxPos = -1;
-    VARP mInputClampValue;
-    VARP mOutputClampValue;
+    VARP mInputClampValue;/*Int8最大值减1*/
+    VARP mOutputClampValue;/*Int8最大值减1*/
     float mMomentum = 0.99f;
     NN::FeatureScaleStatMethod mFeatureScaleStatMethod;
     NN::ScaleUpdateMethod mScaleUpdateMethod;
@@ -1153,7 +1153,7 @@ bool NN::turnQuantize(Module* module, const int bits, NN::FeatureScaleStatMethod
             }
             // conv + bn + ?
             if (p1ModuleType == "BatchNorm") {
-                bool convBnConnected = ((convSingleOutputReference) && (p1InputIndices.size() == 1) && (p1InputIndices[0] == outputIndices[0]));
+                bool convBnConnected = ((convSingleOutputReference) && (p1InputIndices.size() == 1) && (p1InputIndices[0] == outputIndices[0]));//BTBT convBnConnected即该conv后面只接了一个bn
                 if (!convBnConnected) {
                     theModule.reset(NN::ConvBNReluFused({theModule}, featureScaleStatMethod, scaleUpdateMethod, bits, winogradOpt));
                     pipModule->registerModel({theModule});
@@ -1185,7 +1185,8 @@ bool NN::turnQuantize(Module* module, const int bits, NN::FeatureScaleStatMethod
                     outputIndices = p1OutputIndices;
                     needEraseIndices.emplace_back(i + 1);
                     continue;
-                } else { // conv + bn + relu or conv + bn + relu6
+                } else  // conv + bn + relu or conv + bn + relu6
+                { 
                     bool convBnReluConnected = ((bnSingleOutputReference) && (p2InputIndices.size() == 1) && (p2InputIndices[0] == p1OutputIndices[0]));
                     bool isPrelu = false;
                     if (p2ModuleType == "ReLU") {
@@ -1193,14 +1194,14 @@ bool NN::turnQuantize(Module* module, const int bits, NN::FeatureScaleStatMethod
                         float slope = p2Op->main_as_Relu()->slope();
                         isPrelu = std::abs(slope) > 1e-6;
                     }
-                    if (!convBnReluConnected || isPrelu) {
+                    if (!convBnReluConnected || isPrelu) {//if conv+bn+(not only one relu not prelu) OR the relu is prelu then not fuse relu but only fuse conv+bn
                         theModule.reset(NN::ConvBNReluFused({theModule, p1Module}, featureScaleStatMethod, scaleUpdateMethod, bits, winogradOpt));
                         pipModule->registerModel({theModule});
                         outputIndices = p1OutputIndices;
                         needEraseIndices.emplace_back(i + 1);
                         continue;
                     }
-
+                    //if conv+bn+(only one relu not prelu) then fuse conv+bn+relu
                     theModule.reset(NN::ConvBNReluFused({theModule, p1Module, p2Module}, featureScaleStatMethod, scaleUpdateMethod, bits, winogradOpt));
                     pipModule->registerModel({theModule});
                     outputIndices = p2OutputIndices;
@@ -1211,7 +1212,7 @@ bool NN::turnQuantize(Module* module, const int bits, NN::FeatureScaleStatMethod
             }
             // conv + relu or conv + relu6
             if (p1ModuleType == "ReLU" || p1ModuleType == "ReLU6") {
-                bool convReluConnected = ((convSingleOutputReference) && (p1InputIndices.size() == 1) && (p1InputIndices[0] == outputIndices[0]));
+                bool convReluConnected = ((convSingleOutputReference) && (p1InputIndices.size() == 1) && (p1InputIndices[0] == outputIndices[0]));//BTBT convReluConnected即该conv后面只接了一个relu
                 bool isPrelu = false;
                 if (p1ModuleType == "ReLU") {
                     auto p1Op = ((ExprModule*)p1Module.get())->getExpr()->get();
@@ -1223,7 +1224,7 @@ bool NN::turnQuantize(Module* module, const int bits, NN::FeatureScaleStatMethod
                     pipModule->registerModel({theModule});
                     continue;
                 }
-
+                //if not Prelu && convReluConnected, fuse conv+relu
                 theModule.reset(NN::ConvBNReluFused({theModule, p1Module}, featureScaleStatMethod, scaleUpdateMethod, bits));
                 pipModule->registerModel({theModule});
                 outputIndices = p1OutputIndices;

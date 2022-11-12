@@ -23,7 +23,7 @@ namespace MNN {
 struct ScheduleConfig {
     /** which tensor should be kept */
     std::vector<std::string> saveTensors;
-    /** forward type */
+    /** forward type BTBT 主后端*/
     MNNForwardType type = MNN_FORWARD_CPU;
     /** CPU:number of threads in parallel , Or GPU: mode setting*/
     union {
@@ -58,9 +58,9 @@ struct ScheduleConfig {
         /** running mode */
         Mode mode = Op;
     };
-    Path path;
+    Path path;//BTBT 是指从输入到输出计算过程中涉及到的operator。如果没有指定，它将根据模型结构自动识别
 
-    /** backup backend used to create execution when desinated backend do NOT support any op */
+    /** backup backend used to create execution when desinated backend do NOT support any op BTBT 备用后端*/
     MNNForwardType backupType = MNN_FORWARD_CPU;
 
     /** extra backend config */

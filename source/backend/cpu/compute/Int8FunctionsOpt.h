@@ -33,7 +33,7 @@ typedef SSIZE_T ssize_t;
 #endif
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" {//BTBT ??? 这里又会调arm asm?
 #endif
 
 struct QuanPostTreatParameters {

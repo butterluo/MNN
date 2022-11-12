@@ -150,20 +150,20 @@ void initPipelineInfosFromOps(std::vector<Schedule::PipelineInfo>& infos, std::v
     for (const Op* op : ops) {
         Schedule::PipelineInfo opInfo;
         opInfo.op = op;
-        if (nullptr != op->outputIndexes()) {
+        if (nullptr != op->outputIndexes()) {//pipeline info的输出
             auto data = op->outputIndexes()->data();
             for (int j = 0; j < op->outputIndexes()->size(); ++j) {
                 opInfo.outputs.push_back(allTensors[data[j]].get());
             }
         }
-        if (nullptr != op->inputIndexes()) {
+        if (nullptr != op->inputIndexes()) {//pipeline info的输入
             auto data = op->inputIndexes()->data();
             for (int j = 0; j < op->inputIndexes()->size(); ++j) {
                 opInfo.inputs.push_back(allTensors[data[j]].get());
             }
         }
         if (needComputeOp(op)) {
-            infos.emplace_back(std::move(opInfo));
+            infos.emplace_back(std::move(opInfo));// pipeline info列表
         }
     }
 }
