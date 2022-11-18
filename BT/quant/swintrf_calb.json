@@ -1,0 +1,25 @@
+{
+    "format":"RGB",
+    "mean":[
+        0.485,
+        0.456,
+        0.406
+    ],
+    "normal":[
+        0.229,
+        0.224,
+        0.225
+    ],
+    "width":224,
+    "height":224,
+    "path":"/home/butter/P/Data/CV/mnn_quant_cabl",
+    "used_sample_num":100,
+    "feature_quantize_method":"EMA",
+    "weight_quantize_method":"MAX_ABS",
+    "feature_clamp_value":127,
+    "weight_clamp_value":127,
+    "batch_size":1,
+    "quant_bits":8,
+    "input_type":"image",
+    "debug":true
+}

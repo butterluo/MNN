@@ -24,7 +24,12 @@
   "cmake.debugConfig": {
     "args": [
       //multiPose.out
-      "~/P/PTM/CV/tf/model-mobilenet_v1_075.pb.mnn","/home/butter/CODES/MLSys/HPC/MNN/docs/_static/images/start/multipose_input.png","~/P/PTM/CV/tf/multipose_output.png"
+      // "~/P/PTM/CV/tf/model-mobilenet_v1_075.pb.mnn","/home/butter/CODES/MLSys/HPC/MNN/docs/_static/images/start/multipose_input.png","~/P/PTM/CV/tf/multipose_output.png",
+      //pictureRecognition.out
+      // "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1.mnn","/home/butter/CODES/MLSys/HPC/MNN/resource/images/cat.jpg"
+      "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1_q.mnn","/home/butter/CODES/MLSys/HPC/MNN/resource/images/cat.jpg"
+      //pictureRecognition.out
+      // "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1.mnn","~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1_q.mnn","/home/butter/CODES/MLSys/HPC/MNN/BT/quant/swintrf_calb.json"
     ]
   },
   "python.envFile": "${workspaceFolder}/.env",
