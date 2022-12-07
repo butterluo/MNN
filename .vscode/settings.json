@@ -11,6 +11,7 @@
     "-DMNN_DEBUG_MEMORY=OFF",
     "-DMNN_DEBUG_TENSOR_SIZE=OFF",
     "-DCMAKE_VERBOSE_MAKEFILE=ON",
+    "-DMNN_BUILD_TRAIN=ON",
     // "-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE",
     // "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc", 
     // "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++",
@@ -20,16 +21,23 @@
   "cmake.buildArgs": [
     "--verbose"
   ],
-  "cmake.parallelJobs": 6,
+  "cmake.parallelJobs": 8,
   "cmake.debugConfig": {
     "args": [
       //multiPose.out
       // "~/P/PTM/CV/tf/model-mobilenet_v1_075.pb.mnn","/home/butter/CODES/MLSys/HPC/MNN/docs/_static/images/start/multipose_input.png","~/P/PTM/CV/tf/multipose_output.png",
       //pictureRecognition.out
-      // "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1.mnn","/home/butter/CODES/MLSys/HPC/MNN/resource/images/cat.jpg"
-      "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1_q.mnn","/home/butter/CODES/MLSys/HPC/MNN/resource/images/cat.jpg"
-      //pictureRecognition.out
+      // "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1.mnn",
+      // "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1_q.mnn",
+      // "/home/butter/P/PTM/CV/tst/pt/swin_tiny_bt_win4_64.onnx.Qi8.mnn",
+      // "/home/butter/CODES/MLSys/HPC/MNN/resource/images/cat.jpg"
+      "/Users/butter/PTM/CV/tst/pt/swin_tiny_bt1_win4_64.onnx.mnn",
+      "/Users/butter/SRC_/MLSys/HPC/AICompiler/MNN/resource/images/cat.jpg"
+      //quantized.out
       // "~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1.mnn","~/P/PTM/CV/pt/swin_tiny_patch4_window7_224_btch1_q.mnn","/home/butter/CODES/MLSys/HPC/MNN/BT/quant/swintrf_calb.json"
+      //run_test.out
+      // "op/BatchMatMul"
+      // "speed/convolution/conv2d"
     ]
   },
   "python.envFile": "${workspaceFolder}/.env",
@@ -102,5 +110,6 @@
     "streambuf": "cpp",
     "thread": "cpp",
     "typeinfo": "cpp"
-  }
+  },
+  "cmake.generator": "Ninja"
 }

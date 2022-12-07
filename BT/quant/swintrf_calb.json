@@ -10,10 +10,9 @@
         0.224,
         0.225
     ],
-    "width":224,
-    "height":224,
+    "width":128,  
+    "height":128,
     "path":"/home/butter/P/Data/CV/mnn_quant_cabl",
-    "used_sample_num":100,
     "feature_quantize_method":"EMA",
     "weight_quantize_method":"MAX_ABS",
     "feature_clamp_value":127,
